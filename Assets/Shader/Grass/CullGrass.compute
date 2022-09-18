@@ -1,0 +1,18 @@
+#pragma kernel CSMain
+
+StructuredBuffer<float3> positionBuffer;//原始位置数组
+AppendStructuredBuffer<float3> visiPosBuffer;//进过视锥体剔除后, 可见的位置数组
+float4x4 _VPMatrix;
+
+[numthreads(64,1,1)] //一维dispatch, 方便用一个序号调用线程组
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    //posWS -> posCS
+	float4 posCS = mul(_VPMatrix,float4(positionBuffer[id.x],1.0));
+    float s = 1.5;
+    //视锥体剔除
+    if (abs(posCS).z <= posCS.w *1.2 * s && 
+        abs(posCS).y <= posCS.w*1.2 * s && 
+        abs(posCS).x <= posCS.w*1.2 * s)
+         visiPosBuffer.Append(positionBuffer[id.x]);    //通过视锥体剔除
+}
